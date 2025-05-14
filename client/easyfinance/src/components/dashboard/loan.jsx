@@ -6,6 +6,10 @@ import LoanDetailsShow from "../details/LoanDetail";
 import { fetchAllDefaultedClients } from "../../services/api";
 import DefaultEmiViewer from "../details/DefaultEmiViewer"; // adjust path as needed
 
+import LoanAnalyticsCards from "./LoanAnalytic"; // adjust path if needed
+import { getAdminDashboardAnalyticsData } from "../../services/api";
+
+
 const LoanManagementTable = () => {
   const [clients, setClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
@@ -17,6 +21,23 @@ const LoanManagementTable = () => {
   const [defaultedClientIds, setDefaultedClientIds] = useState({});
   const [showDefaultEmis, setShowDefaultEmis] = useState(false);
   const [viewingClientId, setViewingClientId] = useState(null);
+
+  const [analytics, setAnalytics] = useState([]);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await getAdminDashboardAnalyticsData();
+
+        console.log("Analytics data:", res.data);
+        setAnalytics(res?.data); // access `.data` because your response wraps it in ApiResponse
+      } catch (err) {
+        console.error("Error fetching analytics:", err);
+      }
+    };
+  
+    fetchAnalytics();
+  }, []);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -120,8 +141,11 @@ const LoanManagementTable = () => {
     return null;
   };
 
+  
   return (
+    
     <div className="p-6 bg-gray-50 min-h-screen">
+      
       {showDefaultEmis && viewingClientId && (
               <DefaultEmiViewer
                 clientId={viewingClientId}
@@ -135,6 +159,10 @@ const LoanManagementTable = () => {
         <h2 className="text-2xl font-bold text-gray-800 mb-6">
           Client Loan Management
         </h2>
+
+        {analytics && <LoanAnalyticsCards analytics={analytics} darkMode={false} />}
+
+
 
         {getBreadcrumbs()}
 

@@ -7,6 +7,8 @@ import { ApiError } from "../utils/apiError.js";
 import twilio from "twilio";
 import isSameDay from 'date-fns/isSameDay';
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
+import { DefaultedEMI } from "../models/client.loan.model.js";
+import { v4 as uuidv4 } from "uuid";
 
 const generateAccessAndRefrshToken = async (agentId) => {
   try {
@@ -135,7 +137,7 @@ const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM
 const toAdminNumber = process.env.ADMIN_WHATSAPP_TO
 export const AgentcollectEMI = asyncHandler(async (req, res) => {
   const { clientId, loanId } = req.params;
-  const { amountCollected, status, location, paymentMode , recieverName } = req.body;  // Destructure paymentMode from request body
+  const { amountCollected, status, location, paymentMode, recieverName } = req.body;
   const agentId = req.agent._id;
 
   const client = await Client.findById(clientId);
@@ -144,70 +146,113 @@ export const AgentcollectEMI = asyncHandler(async (req, res) => {
   const loan = client.loans.id(loanId);
   if (!loan) throw new ApiError(404, "Loan not found");
 
-  // ✅ Check if EMI already collected today
   const today = new Date();
-  const alreadyCollectedToday = loan.emiRecords.some(record =>
-    isSameDay(new Date(record.date), today)
-  );
 
-  // if (alreadyCollectedToday) {
-  //   throw new ApiError(400, "EMI already collected for today.");
-  // }
+  // Normalize status
+  const allowedStatuses = ["Paid", "Defaulted"];
+  const normalizedStatus = allowedStatuses.includes(status) ? status : "Paid";
 
-  const emiEntry = {
-    date: today,
-    amountCollected,
-    status,
-    collectedBy: agentId,
-    location,
-    paymentMode, 
-    recieverName, // Include paymentMode in the EMI entry
-  };
+  const emiAmount = loan.emiAmount;
+  const numberOfEmisPaid = Math.floor(amountCollected / emiAmount);
 
-  loan.emiRecords.push(emiEntry);
-  loan.totalCollected += amountCollected;
-  loan.totalAmountLeft -= amountCollected;
+  // Record EMI or defaults
+  for (let i = 0; i < numberOfEmisPaid; i++) {
+    let emiDate = new Date(today);
+
+    if (loan.emiType === "Daily") {
+      emiDate.setDate(today.getDate() + i);
+    } else if (loan.emiType === "Weekly") {
+      emiDate.setDate(today.getDate() + i * 7);
+    } else if (loan.emiType === "Monthly") {
+      emiDate.setMonth(today.getMonth() + i);
+    }
+
+    if (normalizedStatus === "Paid") {
+      loan.emiRecords.push({
+        date: emiDate,
+        amountCollected: emiAmount,
+        status: "Paid",
+        collectedBy: agentId,
+        location,
+        paymentMode,
+        recieverName,
+      });
+    } else {
+      const defaultedEmi = new DefaultedEMI({
+        date: emiDate,
+        clientId,
+        loanId,
+        amountDue: emiAmount,
+        location,
+        recordedBy: agentId,
+        reason: "Marked Default",
+      });
+      await defaultedEmi.save();
+    }
+  }
+
+  // Update loan stats
+  if (normalizedStatus === "Paid") {
+    loan.totalCollected += amountCollected;
+  }
+
+  loan.totalAmountLeft = loan.totalPayable - loan.totalCollected;
   loan.updatedAt = new Date();
 
-  // Calculate computed fields after EMI collection
-  loan.paidEmis = loan.emiRecords.filter(e => e.status === "Paid").length;
+  // Recalculate paid EMIs
+  loan.paidEmis = loan.emiRecords.filter((e) => e.status === "Paid").length;
 
-  // Estimate total EMIs from tenure
-  const totalEmis = loan.tenureMonths ?? loan.tenureDays ?? 0;
-  loan.totalEmis = totalEmis;
+  // Update next EMI date
+  if (numberOfEmisPaid > 0) {
+    let baseDate = loan.nextEmiDate ? new Date(loan.nextEmiDate) : new Date(loan.startDate);
 
-  // Calculate next EMI date
-  const nextDate = new Date();
-  if (loan.emiType === "Monthly") nextDate.setMonth(nextDate.getMonth() + 1);
-  else if (loan.emiType === "Weekly") nextDate.setDate(nextDate.getDate() + 7);
-  else if (loan.emiType === "Daily") nextDate.setDate(nextDate.getDate() + 1);
-  loan.nextEmiDate = nextDate;
+    if (loan.emiType === "Daily") {
+      baseDate.setDate(baseDate.getDate() + numberOfEmisPaid);
+    } else if (loan.emiType === "Weekly") {
+      baseDate.setDate(baseDate.getDate() + numberOfEmisPaid * 7);
+    } else if (loan.emiType === "Monthly") {
+      baseDate.setMonth(baseDate.getMonth() + numberOfEmisPaid);
+    }
 
-  // Compute interest and repayment
+    loan.nextEmiDate = baseDate;
+  }
+
+  loan.totalEmis = loan.tenureMonths ?? loan.tenureDays ?? 0;
   loan.totalInterest = loan.totalPayable - loan.loanAmount;
   loan.totalRepayment = loan.totalPayable;
-  console.log("Updated loan data:", loan);
-  
+
+  client.markModified("loans");
   await client.save();
-  
+
   const updatedLoan = client.loans.id(loanId);
-
   const agent = await Agent.findById(agentId);
-  console.log("EMI status received:", status);
-  console.log("All EMIs:", loan.emiRecords.map(e => e.status));
-  console.log("Paid EMIs:", loan.emiRecords.filter(e => e.status === "Paid").length);
-  
 
-  const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${location.address}\n🙋‍♂️ *Collected By:* ${agent.fullname}\n💳 *Payment Mode:* ${paymentMode}`;  // Added Payment Mode to message
+  // WhatsApp Notification
+  if (normalizedStatus === "Defaulted") {
+    const messageBody = `⚠️ *EMI Default Alert!*\n\n📛 *Client:* ${client.clientName}\n💰 *Amount Due:* ₹${amountCollected}\n🕒 *Recorded At:* ${today.toLocaleString()}\n🧑‍💼 *Updated By:* ${agent.fullname}\n\n🚨 Please take necessary action.`;
 
-  await clientTwilio.messages.create({
-    from: fromWhatsAppNumber,
-    to: toAdminNumber,
-    body: messageBody,
-  });
+    await clientTwilio.messages.create({
+      from: fromWhatsAppNumber,
+      to: toAdminNumber,
+      body: messageBody,
+    });
+  } else {
+    const [lng, lat] = location.coordinates;
+    const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+    const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${mapsLink}\n🙋‍♂️ *Collected By:* ${agent.fullname}\n💳 *Payment Mode:* ${paymentMode}`;
 
-  res.status(200).json(new ApiResponse(200, updatedLoan, "EMI collected and recorded successfully"));
+    await clientTwilio.messages.create({
+      from: fromWhatsAppNumber,
+      to: toAdminNumber,
+      body: messageBody,
+    });
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, updatedLoan, "EMI collected and recorded successfully")
+  );
 });
+
 
 // export const AgentaddClient = asyncHandler(async (req, res) => {
 //   const { clientName, clientPhone, clientAddress, clientPhoto, email } = req.body;

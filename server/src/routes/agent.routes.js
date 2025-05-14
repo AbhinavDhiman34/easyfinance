@@ -32,7 +32,13 @@ agentRoute.route("/collectemi/:clientId/:loanId").post(verifyAgentJwt,Agentcolle
 
 
 
-agentRoute.route("/addclient").post(upload.single("file"), verifyAgentJwt, AgentaddClient) 
+agentRoute.route("/addclient").post(upload.fields([
+  { name: "clientPhoto", maxCount: 1 },
+  { name: "shopPhoto", maxCount: 1 },
+  { name: "housePhoto", maxCount: 1 },
+  { name: "documents", maxCount: 10 },
+]), verifyAgentJwt, AgentaddClient) 
+
 
 
 

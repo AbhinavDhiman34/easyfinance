@@ -7,11 +7,18 @@ import {
   ResponsiveContainer,
   Cell,
   Legend,
-  Tooltip
+  Tooltip,
 } from "recharts";
-import { CreditCard, TrendingUp, Users, Clock, Search, FileDown } from "lucide-react";
+import {
+  CreditCard,
+  TrendingUp,
+  Users,
+  Clock,
+  Search,
+  FileDown,
+} from "lucide-react";
 import { getTodayCollections } from "../../services/api"; // You'll need to add this API function
-import * as XLSX from 'xlsx'; // Import xlsx library
+import * as XLSX from "xlsx"; // Import xlsx library
 
 const COLORS = ["#0088FE", "#FF8042"];
 const DARK_COLORS = ["#60a5fa", "#fb923c"];
@@ -46,61 +53,68 @@ const DashboardOverview = ({ analytics, darkMode, transparentCharts }) => {
   ];
 
   // Calculate percentages for pie chart
-  const totalAmount = analytics.totalAmountRecovered + analytics.totalAmountRemaining;
-  const recoveredPercentage = Math.round((analytics.totalAmountRecovered / totalAmount) * 100);
+  const totalAmount =
+    analytics.totalAmountRecovered + analytics.totalAmountRemaining;
+  const recoveredPercentage = Math.round(
+    (analytics.totalAmountRecovered / totalAmount) * 100
+  );
   const remainingPercentage = 100 - recoveredPercentage;
 
   // Calculate today's collection total
-  const todayTotal = todayCollections.reduce((sum, collection) => sum + collection.amountCollected, 0);
+  const todayTotal = todayCollections.reduce(
+    (sum, collection) => sum + collection.amountCollected,
+    0
+  );
 
   // Filter collections based on search term
-  const filteredCollections = todayCollections.filter(collection => 
-    collection.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    collection.agentName?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCollections = todayCollections.filter(
+    (collection) =>
+      collection.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      collection.agentName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Function to export today's collections to Excel
   const exportToExcel = () => {
     try {
       setExporting(true);
-      
+
       // Format the data for Excel
-      const excelData = todayCollections.map(collection => ({
-        'Client Name': collection.clientName,
-        'Loan Number': collection.loanNumber,
-        'Amount Collected': collection.amountCollected,
-        'Payment Mode': collection.paymentMode,
-        'Status': collection.status,
-        'Agent': collection.agentName || 'Admin',
-        'Time': new Date(collection.date).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
+      const excelData = todayCollections.map((collection) => ({
+        "Client Name": collection.clientName,
+        "Loan Number": collection.loanNumber,
+        "Amount Collected": collection.amountCollected,
+        "Payment Mode": collection.paymentMode,
+        Status: collection.status,
+        Agent: collection.agentName || "Admin",
+        Time: new Date(collection.date).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
         }),
-        'Date': new Date(collection.date).toLocaleDateString(),
-        'Reciever Name': collection.recieverName
+        Date: new Date(collection.date).toLocaleDateString(),
+        "Reciever Name": collection.recieverName,
       }));
-      
+
       // Add total row
       excelData.push({
-        'Client Name': '',
-        'Loan Number': '',
-        'Amount Collected': todayTotal,
-        'Payment Mode': '',
-        'Status': '',
-        'Agent': '',
-        'Time': '',
-        'Date': 'TOTAL'
+        "Client Name": "",
+        "Loan Number": "",
+        "Amount Collected": todayTotal,
+        "Payment Mode": "",
+        Status: "",
+        Agent: "",
+        Time: "",
+        Date: "TOTAL",
       });
-      
+
       // Create workbook and worksheet
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Today's Collections");
-      
+
       // Format the date for the filename
       const today = new Date();
-      const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-      
+      const dateStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+
       // Export to file
       XLSX.writeFile(workbook, `Collections_${dateStr}.xlsx`);
     } catch (error) {
@@ -214,7 +228,7 @@ const DashboardOverview = ({ analytics, darkMode, transparentCharts }) => {
         </div>
 
         {/* Defaulters Card */}
-        <div className={statCardClass}>
+        {/* <div className={statCardClass}>
           <div className="flex justify-between">
             <div>
               <p
@@ -239,7 +253,7 @@ const DashboardOverview = ({ analytics, darkMode, transparentCharts }) => {
               />
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Charts Row */}
@@ -342,9 +356,9 @@ const DashboardOverview = ({ analytics, darkMode, transparentCharts }) => {
                 Today's Collections
               </h3>
               <button
-  onClick={exportToExcel}
-  disabled={loading || exporting || todayCollections.length === 0}
-  className={`
+                onClick={exportToExcel}
+                disabled={loading || exporting || todayCollections.length === 0}
+                className={`
     flex items-center justify-center gap-1.5
     px-2 py-1 text-xs
     sm:px-3 sm:py-1.5 sm:text-sm
@@ -359,54 +373,65 @@ const DashboardOverview = ({ analytics, darkMode, transparentCharts }) => {
         : "bg-yellow-500 hover:bg-green-600 text-black disabled:bg-red-500"
     }
   `}
-  aria-label="Export to Excel"
->
-  <FileDown 
-    className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" 
-  />
-  <span className="hidden xs:inline">
-    {exporting ? "Exporting..." : "Export to Excel"}
-  </span>
-  <span className="xs:hidden">
-    {exporting ? "..." : "Excle Sheet ⬇"}
-  </span>
-</button>
+                aria-label="Export to Excel"
+              >
+                <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                <span className="hidden xs:inline">
+                  {exporting ? "Exporting..." : "Export to Excel"}
+                </span>
+                <span className="xs:hidden">
+                  {exporting ? "..." : "Excle Sheet ⬇"}
+                </span>
+              </button>
             </div>
-            <div className={`relative ${darkMode ? "text-white" : "text-gray-800"}`}>
+            <div
+              className={`relative ${
+                darkMode ? "text-white" : "text-gray-800"
+              }`}
+            >
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={`pl-8 pr-4 py-2 rounded-lg text-sm w-full sm:w-48 ${
-                  darkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                     : "bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                 } border focus:outline-none focus:ring-2 ${
                   darkMode ? "focus:ring-blue-500" : "focus:ring-blue-400"
                 }`}
               />
-              <Search size={16} className="absolute left-2 top-2.5 text-gray-400" />
+              <Search
+                size={16}
+                className="absolute left-2 top-2.5 text-gray-400"
+              />
             </div>
           </div>
 
           <div className="overflow-x-auto" style={{ maxHeight: "360px" }}>
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className={`animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 ${
-                  darkMode ? "border-blue-400" : "border-blue-600"
-                }`}></div>
+                <div
+                  className={`animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 ${
+                    darkMode ? "border-blue-400" : "border-blue-600"
+                  }`}
+                ></div>
               </div>
             ) : todayCollections.length === 0 ? (
-              <div className={`text-center py-16 ${
-                darkMode ? "text-gray-400" : "text-gray-500"
-              }`}>
+              <div
+                className={`text-center py-16 ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 No collections recorded today
               </div>
             ) : (
-              <table className={`min-w-full divide-y ${
-                darkMode ? "divide-gray-700" : "divide-gray-200"
-              }`}>
+              <table
+                className={`min-w-full divide-y ${
+                  darkMode ? "divide-gray-700" : "divide-gray-200"
+                }`}
+              >
                 <thead className={darkMode ? "bg-gray-800" : "bg-gray-50"}>
                   <tr>
                     <th
@@ -467,85 +492,117 @@ const DashboardOverview = ({ analytics, darkMode, transparentCharts }) => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className={`divide-y ${
-                  darkMode ? "divide-gray-700" : "divide-gray-200"
-                }`}>
+                <tbody
+                  className={`divide-y ${
+                    darkMode ? "divide-gray-700" : "divide-gray-200"
+                  }`}
+                >
                   {filteredCollections.map((collection, index) => (
-                    <tr key={index} className={
-                      darkMode ? "hover:bg-gray-700/50" : "hover:bg-gray-50"
-                    }>
+                    <tr
+                      key={index}
+                      className={
+                        darkMode ? "hover:bg-gray-700/50" : "hover:bg-gray-50"
+                      }
+                    >
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
-                            darkMode ? "bg-gray-700" : "bg-gray-200"
-                          } flex items-center justify-center`}>
-                            <span className={darkMode ? "text-gray-300" : "text-gray-600"}>
-                              {collection.clientName?.charAt(0).toUpperCase() || "C"}
+                          <div
+                            className={`flex-shrink-0 h-8 w-8 rounded-full ${
+                              darkMode ? "bg-gray-700" : "bg-gray-200"
+                            } flex items-center justify-center`}
+                          >
+                            <span
+                              className={
+                                darkMode ? "text-gray-300" : "text-gray-600"
+                              }
+                            >
+                              {collection.clientName?.charAt(0).toUpperCase() ||
+                                "C"}
                             </span>
                           </div>
                           <div className="ml-3">
-                            <div className={`text-sm font-medium ${
-                              darkMode ? "text-white" : "text-gray-900"
-                            }`}>
+                            <div
+                              className={`text-sm font-medium ${
+                                darkMode ? "text-white" : "text-gray-900"
+                              }`}
+                            >
                               {collection.clientName}
                             </div>
-                            <div className={`text-xs ${
-                              darkMode ? "text-gray-400" : "text-gray-500"
-                            }`}>
+                            <div
+                              className={`text-xs ${
+                                darkMode ? "text-gray-400" : "text-gray-500"
+                              }`}
+                            >
                               {collection.loanNumber}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className={`text-sm font-medium ${
-                          darkMode ? "text-white" : "text-gray-900"
-                        }`}>
+                        <div
+                          className={`text-sm font-medium ${
+                            darkMode ? "text-white" : "text-gray-900"
+                          }`}
+                        >
                           ₹ {collection.amountCollected.toLocaleString()}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className={`text-sm ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}>
+                        <div
+                          className={`text-sm ${
+                            darkMode ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
                           {collection.paymentMode}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          collection.status === "Paid" 
-                            ? darkMode ? "bg-green-900/30 text-green-300" : "bg-green-100 text-green-800"
-                            : collection.status === "Partial"
-                              ? darkMode ? "bg-yellow-900/30 text-yellow-300" : "bg-yellow-100 text-yellow-800"
-                              : darkMode ? "bg-red-900/30 text-red-300" : "bg-red-100 text-red-800"
-                        }`}>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            collection.status === "Paid"
+                              ? darkMode
+                                ? "bg-green-900/30 text-green-300"
+                                : "bg-green-100 text-green-800"
+                              : collection.status === "Partial"
+                              ? darkMode
+                                ? "bg-yellow-900/30 text-yellow-300"
+                                : "bg-yellow-100 text-yellow-800"
+                              : darkMode
+                              ? "bg-red-900/30 text-red-300"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
                           {collection.status}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className={`text-sm ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}>
-                          {collection.agentName || 'Admin'}
+                        <div
+                          className={`text-sm ${
+                            darkMode ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          {collection.agentName || "Admin"}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className={`text-sm ${
-                          darkMode ? "text-gray-400" : "text-gray-500"
-                        }`}>
+                        <div
+                          className={`text-sm ${
+                            darkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        >
                           {new Date(collection.date).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </div>
-
-                       
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className={`text-sm ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}>
-                          {collection.recieverName || 'Admin'}
+                        <div
+                          className={`text-sm ${
+                            darkMode ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          {collection.recieverName || "Admin"}
                         </div>
                       </td>
                     </tr>
@@ -556,12 +613,18 @@ const DashboardOverview = ({ analytics, darkMode, transparentCharts }) => {
           </div>
 
           {/* Total for today */}
-          <div className={`flex justify-end mt-4 pt-4 ${
-            darkMode ? "border-t border-gray-700" : "border-t border-gray-200"
-          }`}>
-            <div className={`flex items-center justify-between px-4 py-2 rounded-lg ${
-              darkMode ? "bg-blue-900/20 text-blue-300" : "bg-blue-50 text-blue-700"
-            }`}>
+          <div
+            className={`flex justify-end mt-4 pt-4 ${
+              darkMode ? "border-t border-gray-700" : "border-t border-gray-200"
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between px-4 py-2 rounded-lg ${
+                darkMode
+                  ? "bg-blue-900/20 text-blue-300"
+                  : "bg-blue-50 text-blue-700"
+              }`}
+            >
               <span className="font-semibold mr-3">Total Collected Today:</span>
               <span className="font-bold">₹ {todayTotal.toLocaleString()}</span>
             </div>

@@ -406,6 +406,7 @@ export const updatedClient = asyncHandler(async (req, res) => {
 
 //remove a client
 
+
 export const removeClient = asyncHandler(async (req, res) => {
   const { clientId } = req.params;
 
@@ -414,14 +415,38 @@ export const removeClient = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Client not found");
   }
 
+  // Delete all defaulted EMIs related to this client
+  await DefaultedEMI.deleteMany({ clientId });
+
+  // Now delete the client
   await Client.findByIdAndDelete(clientId);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Client removed successfully"));
+    .json(new ApiResponse(200, {}, "Client and related Defaulted EMIs removed successfully"));
 });
 
+
+
+// export const removeClient = asyncHandler(async (req, res) => {
+//   const { clientId } = req.params;
+
+//   const client = await Client.findById(clientId);
+//   if (!client) {
+//     throw new ApiError(404, "Client not found");
+//   }
+
+//   await Client.findByIdAndDelete(clientId);
+
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, {}, "Client removed successfully"));
+// });
+
 // get a agent details
+
+
+
 export const agentDetails = asyncHandler(async (req, res) => {
   const { agentId } = req.params;
 
@@ -637,6 +662,9 @@ export const removeLoanFromClient = asyncHandler(async (req, res) => {
   const client = await Client.findById(clientId);
   const loanExists = client.loans.id(loanId);
 
+
+  
+
   if (!loanExists) {
     throw new ApiError(404, "Loan not found");
   }
@@ -644,7 +672,7 @@ export const removeLoanFromClient = asyncHandler(async (req, res) => {
   if (!client) {
     throw new ApiError(404, "Client not found");
   }
-
+  await DefaultedEMI.deleteMany({ loanId });
   client.loans.pull(loanId);
   await client.save();
   return res

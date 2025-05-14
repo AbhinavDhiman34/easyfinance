@@ -192,13 +192,17 @@ function CollectEMI({
     }
   };
 
-  const markAsDefaulted = () => {
-    setFormData((prev) => ({
-      ...prev,
-      status: "Defaulted",
-    }));
-    handleSubmit({ preventDefault: () => {} }); // Simulate a submit event
-  };
+  // const markAsDefaulted = async () => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     status: "Defaulted",
+  //   }));
+  
+  //   // Wait for next render tick
+  //   setTimeout(() => {
+  //     handleSubmit({ preventDefault: () => {} });
+  //   }, 0);
+  // };
   const getStatusBasedOnAmount = () => {
     if (!loan || !formData.amountCollected) return "Defaulted";
 
@@ -442,7 +446,7 @@ function CollectEMI({
                   </>
                 )}
               </button>
-              <button
+              {/* <button
                 variant="outlined"
                 color="error"
                 disabled={submitting}
@@ -450,7 +454,7 @@ function CollectEMI({
                 onClick={markAsDefaulted}
               >
                 Mark EMI as Default
-              </button>
+              </button> */}
              
 
               {success && (
