@@ -259,7 +259,7 @@ const AdminDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <button
+              {/* <button
                 onClick={toggleDarkMode}
                 className={`p-2 rounded-full transition-all duration-300 ${
                   darkMode 
@@ -269,7 +269,7 @@ const AdminDashboard = () => {
                 aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
+              </button> */}
               
               <div className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
