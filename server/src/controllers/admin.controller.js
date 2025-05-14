@@ -832,32 +832,31 @@ export const collectEMI = asyncHandler(async (req, res) => {
   loan.totalInterest = loan.totalPayable - loan.loanAmount;
   loan.totalRepayment = loan.totalPayable;
 
-  client.markModified("loans");
   await client.save();
 
   const updatedLoan = client.loans.id(loanId);
   const admin = await Admin.findById(adminId);
 
   // 📲 WhatsApp Notification
-  if (normalizedStatus === "Defaulted") {
-    const messageBody = `⚠️ *EMI Default Alert!*\n\n📛 *Client:* ${client.clientName}\n💰 *Amount Due:* ₹${amountCollected}\n🕒 *Recorded At:* ${today.toLocaleString()}\n👨‍💼 *Updated By:* ${admin.username}\n\n🚨 Please take necessary action.`;
+  // if (normalizedStatus === "Defaulted") {
+  //   const messageBody = `⚠️ *EMI Default Alert!*\n\n📛 *Client:* ${client.clientName}\n💰 *Amount Due:* ₹${amountCollected}\n🕒 *Recorded At:* ${today.toLocaleString()}\n👨‍💼 *Updated By:* ${admin.username}\n\n🚨 Please take necessary action.`;
 
-    await clientTwilio.messages.create({
-      from: fromWhatsAppNumber,
-      to: toAdminNumber,
-      body: messageBody,
-    });
-  } else {
-    const [lng, lat] = location.coordinates;
-    const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
-    const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${googleMapsLink}\n🙋‍♂️ *Collected By:* ${admin.username}\n💳 *Payment Mode:* ${paymentMode}`;
+  //   await clientTwilio.messages.create({
+  //     from: fromWhatsAppNumber,
+  //     to: toAdminNumber,
+  //     body: messageBody,
+  //   });
+  // } else {
+  //   const [lng, lat] = location.coordinates;
+  //   const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+  //   const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${googleMapsLink}\n🙋‍♂️ *Collected By:* ${admin.username}\n💳 *Payment Mode:* ${paymentMode}`;
 
-    await clientTwilio.messages.create({
-      from: fromWhatsAppNumber,
-      to: toAdminNumber,
-      body: messageBody,
-    });
-  }
+  //   await clientTwilio.messages.create({
+  //     from: fromWhatsAppNumber,
+  //     to: toAdminNumber,
+  //     body: messageBody,
+  //   });
+  // }
 
   return res
     .status(200)

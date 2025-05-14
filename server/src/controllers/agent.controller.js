@@ -228,25 +228,25 @@ export const AgentcollectEMI = asyncHandler(async (req, res) => {
   const agent = await Agent.findById(agentId);
 
   // WhatsApp Notification
-  if (normalizedStatus === "Defaulted") {
-    const messageBody = `⚠️ *EMI Default Alert!*\n\n📛 *Client:* ${client.clientName}\n💰 *Amount Due:* ₹${amountCollected}\n🕒 *Recorded At:* ${today.toLocaleString()}\n🧑‍💼 *Updated By:* ${agent.fullname}\n\n🚨 Please take necessary action.`;
+  // if (normalizedStatus === "Defaulted") {
+  //   const messageBody = `⚠️ *EMI Default Alert!*\n\n📛 *Client:* ${client.clientName}\n💰 *Amount Due:* ₹${amountCollected}\n🕒 *Recorded At:* ${today.toLocaleString()}\n🧑‍💼 *Updated By:* ${agent.fullname}\n\n🚨 Please take necessary action.`;
 
-    await clientTwilio.messages.create({
-      from: fromWhatsAppNumber,
-      to: toAdminNumber,
-      body: messageBody,
-    });
-  } else {
-    const [lng, lat] = location.coordinates;
-    const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
-    const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${mapsLink}\n🙋‍♂️ *Collected By:* ${agent.fullname}\n💳 *Payment Mode:* ${paymentMode}`;
+  //   await clientTwilio.messages.create({
+  //     from: fromWhatsAppNumber,
+  //     to: toAdminNumber,
+  //     body: messageBody,
+  //   });
+  // } else {
+  //   const [lng, lat] = location.coordinates;
+  //   const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+  //   const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${mapsLink}\n🙋‍♂️ *Collected By:* ${agent.fullname}\n💳 *Payment Mode:* ${paymentMode}`;
 
-    await clientTwilio.messages.create({
-      from: fromWhatsAppNumber,
-      to: toAdminNumber,
-      body: messageBody,
-    });
-  }
+  //   await clientTwilio.messages.create({
+  //     from: fromWhatsAppNumber,
+  //     to: toAdminNumber,
+  //     body: messageBody,
+  //   });
+  // }
 
   res.status(200).json(
     new ApiResponse(200, updatedLoan, "EMI collected and recorded successfully")
